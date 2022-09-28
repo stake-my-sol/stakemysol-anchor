@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-stake_my_sol = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+stake_my_sol = "F5m8b7d8o3PMGyStiMdT6N6cttvMHWiXaJNWQ5Jve94k"
 
 [registry]
 url = "https://api.apr.dev"

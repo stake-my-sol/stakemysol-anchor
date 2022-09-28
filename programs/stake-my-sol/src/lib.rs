@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_lang::solana_program::stake as Stake;
 use anchor_lang::solana_program::vote as Vote;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("F5m8b7d8o3PMGyStiMdT6N6cttvMHWiXaJNWQ5Jve94k");
 
 #[program]
 pub mod stake_my_sol {
@@ -55,7 +55,7 @@ pub mod stake_my_sol {
             );
 
             // Todo: check if the stake account has already been used
-            // Todo: Create the stake account and Delegate
+            msg!("Create stake account and delegate");
             Stake::instruction::create_account_with_seed_and_delegate_stake(
                 &ctx.accounts.staker.key(),
                 &stake_pubkey,
