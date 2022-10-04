@@ -2,13 +2,13 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-stake_my_sol = "F5m8b7d8o3PMGyStiMdT6N6cttvMHWiXaJNWQ5Jve94k"
+stake_my_sol = "CyUJ4YK5NoRopFsffbi4yKCNCScU9rCdtJ3dXmamfui1"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "https://radial-blissful-surf.solana-testnet.quiknode.pro/e3ccd1cfd24786408ed6afffbe3bbf5aa8f74cc0/"
 wallet = "/home/nick/.config/solana/id.json"
 
 [scripts]
