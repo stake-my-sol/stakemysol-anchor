@@ -5,7 +5,9 @@ import { StakeMySol } from "../target/types/stake_my_sol";
 import {LAMPORTS_PER_SOL} from "@solana/web3.js"
 import { assert } from "chai"
 
-const stake_program = web3.StakeProgram
+
+
+const stakeProgram = web3.StakeProgram
 
 describe("stake-my-sol", () => {
   // Configure the client to use the local cluster.
@@ -14,14 +16,18 @@ describe("stake-my-sol", () => {
   const payer = provider.wallet as anchor.Wallet;
   const program = anchor.workspace.StakeMySol as Program<StakeMySol>;
 
-  it("create Stake Account And Split", async () => {
-    const seedPrefix = "slgjogjos";
+  it("create a Stake Account And delegate", async () => {
+    const seedPrefix = "slgd36t66gh";
     const initialIndex = 0;
     const totalStakeAmount = 2 * LAMPORTS_PER_SOL;
-    const voteAccount = new web3.PublicKey("9CdZxSmB6RH1Rcd4q2Wb56eFWDCu25TVs3484Y45W6rL");
+    // testnet
+    // const voteAccount = new web3.PublicKey("9CdZxSmB6RH1Rcd4q2Wb56eFWDCu25TVs3484Y45W6rL");
 
-    const stakePubkey = await web3.PublicKey.createWithSeed(payer.publicKey, `${seedPrefix}-${initialIndex}`, stake_program.programId) 
-    console.log(stakePubkey.toBase58())
+    // devnet
+    const voteAccount = new web3.PublicKey("4QUZQ4c7bZuJ4o4L8tYAEGnePFV27SUFEVmC7BYfsXRp");
+
+    const stakePubkey = await web3.PublicKey.createWithSeed(payer.publicKey, `${seedPrefix}-${initialIndex}`, stakeProgram.programId) 
+    console.log("stake pubkey: ", stakePubkey.toBase58())
 
     const tx = await program.methods.createStakeAccountsAndDelegate(
       new BN(totalStakeAmount), 
@@ -30,18 +36,23 @@ describe("stake-my-sol", () => {
       )
       .accounts({
         staker: payer.publicKey,
-        stakeProgram: stake_program.programId,
+        stakeProgram: stakeProgram.programId,
+        systemProgram: web3.SystemProgram.programId,
+        rentSysvar: web3.SYSVAR_RENT_PUBKEY,
+        clockSysvar: web3.SYSVAR_CLOCK_PUBKEY,
+        stakeHistorySysvar: web3.SYSVAR_STAKE_HISTORY_PUBKEY,
+        stakeConfigSysvar: web3.STAKE_CONFIG_ID
     }).remainingAccounts([{
       pubkey: voteAccount, isSigner: false, isWritable: false
     },{
-      pubkey: stakePubkey, isSigner: false, isWritable: false
+      pubkey: stakePubkey, isSigner: false, isWritable: true
     }])
     .signers([payer.payer])
     .rpc();
 
     const currentStakeAccounts = await provider
       .connection
-      .getParsedProgramAccounts(stake_program.programId, {
+      .getParsedProgramAccounts(stakeProgram.programId, {
       filters: [
         {
           memcmp: {

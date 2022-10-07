@@ -2,14 +2,15 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-stake_my_sol = "CyUJ4YK5NoRopFsffbi4yKCNCScU9rCdtJ3dXmamfui1"
+stake_my_sol = "C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "https://radial-blissful-surf.solana-testnet.quiknode.pro/e3ccd1cfd24786408ed6afffbe3bbf5aa8f74cc0/"
-wallet = "/home/nick/.config/solana/id.json"
+# cluster = "https://radial-blissful-surf.solana-testnet.quiknode.pro/e3ccd1cfd24786408ed6afffbe3bbf5aa8f74cc0/"
+cluster = "devnet"
+wallet = "/home/nick/.config/solana/devnet.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
