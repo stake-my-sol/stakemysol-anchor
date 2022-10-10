@@ -2,53 +2,95 @@ import * as anchor from "@project-serum/anchor";
 import { Program, BN } from "@project-serum/anchor";
 import { web3 } from "@project-serum/anchor";
 import { StakeMySol } from "../target/types/stake_my_sol";
-import {LAMPORTS_PER_SOL} from "@solana/web3.js"
+import { LAMPORTS_PER_SOL } from "@solana/web3.js"
 import { assert } from "chai"
-
-
+import crypto from "crypto"
+import sleep from "../utils/sleep";
 
 const stakeProgram = web3.StakeProgram
 
 describe("stake-my-sol", () => {
-  // Configure the client to use the local cluster.
+  // Configure the client to use the specified cluster.
   const provider = anchor.AnchorProvider.env();
   anchor.setProvider(provider);
-  const payer = provider.wallet as anchor.Wallet;
+  // const payer = provider.wallet as anchor.Wallet;
   const program = anchor.workspace.StakeMySol as Program<StakeMySol>;
 
-  it("create a Stake Account And delegate", async () => {
-    const seedPrefix = "slgd36t66gh";
+  // fetching 10 vote accounts from network
+  console.log("fetching some vote accounts from network...")
+  let voteAccounts: web3.PublicKey[] = [];
+
+  (async () =>{
+    const res = await provider.connection.getVoteAccounts(provider.connection.commitment);
+    voteAccounts = res.current
+                      .slice(0,11)
+                      .map(validator => new web3.PublicKey(validator.votePubkey))
+  })()
+
+  const tempKeypair = web3.Keypair.generate();
+
+
+
+
+  it("create multiple stake accounts and delegate", async () => {
+    // wait for 5 seconds to be able to airdrop again
+
+    // choose a random number of stake accounts to create
+    // between 3 and 10
+    // const numberOfStakeAccounts = Math.ceil(Math.random() * 8) + 2;
+
+    // maximum number program is capable of is 3
+    const numberOfStakeAccounts = 3;
+    
+    const airdropAmount = 1 * LAMPORTS_PER_SOL;
+
+    console.log(`air dropping ${airdropAmount / LAMPORTS_PER_SOL} SOL to tempKeypair...`)
+    const airdrop_tx = await provider.connection.requestAirdrop(tempKeypair.publicKey, airdropAmount);
+    await provider.connection.confirmTransaction(airdrop_tx);
+
+    // create random string for seedPrefix
+    const seedPrefix = crypto.randomBytes(4).toString('hex') 
+    console.log("🚀 ~ file: stake-my-sol.ts ~ line 45 ~ it ~ seedPrefix", seedPrefix)
+    // initial index for 
     const initialIndex = 0;
-    const totalStakeAmount = 2 * LAMPORTS_PER_SOL;
-    // testnet
-    // const voteAccount = new web3.PublicKey("9CdZxSmB6RH1Rcd4q2Wb56eFWDCu25TVs3484Y45W6rL");
+    // total amount of lamports to be staked
+    // deducting a little bit to cover TX fees
+    const totalStakeAmount = airdropAmount - 0.1 * LAMPORTS_PER_SOL;
+    const remainingAccounts: web3.AccountMeta[] = []
 
-    // devnet
-    const voteAccount = new web3.PublicKey("4QUZQ4c7bZuJ4o4L8tYAEGnePFV27SUFEVmC7BYfsXRp");
+    // creating #numberOfStakeAccounts stake accounts and delegating
+    console.log(`creating ${numberOfStakeAccounts} stake accounts and delegating...`)
+    for (let i=0; i < numberOfStakeAccounts; i++){
+      let stakePubkey = await web3.PublicKey.createWithSeed(tempKeypair.publicKey, `${seedPrefix}-${i}`, stakeProgram.programId) 
+      console.log("stake pubkey: ", stakePubkey.toBase58())
 
-    const stakePubkey = await web3.PublicKey.createWithSeed(payer.publicKey, `${seedPrefix}-${initialIndex}`, stakeProgram.programId) 
-    console.log("stake pubkey: ", stakePubkey.toBase58())
+      remainingAccounts.splice(i, 0, {pubkey: voteAccounts[i], isSigner: false, isWritable: false})
+      remainingAccounts.splice(i + numberOfStakeAccounts, 0, {pubkey: stakePubkey, isSigner: false, isWritable: true})
+    }
 
+    // create a new stake account and delegate it to voteAccounts[0...numberOfStakeAccounts]
+    console.log(`creating a new stake account and delegate it to voteAccounts[0...numberOfStakeAccounts]...`)
     const tx = await program.methods.createStakeAccountsAndDelegate(
       new BN(totalStakeAmount), 
-      0, 
+      0,
       seedPrefix,
       )
       .accounts({
-        staker: payer.publicKey,
+        staker: tempKeypair.publicKey,
         stakeProgram: stakeProgram.programId,
         systemProgram: web3.SystemProgram.programId,
         rentSysvar: web3.SYSVAR_RENT_PUBKEY,
         clockSysvar: web3.SYSVAR_CLOCK_PUBKEY,
         stakeHistorySysvar: web3.SYSVAR_STAKE_HISTORY_PUBKEY,
         stakeConfigSysvar: web3.STAKE_CONFIG_ID
-    }).remainingAccounts([{
-      pubkey: voteAccount, isSigner: false, isWritable: false
-    },{
-      pubkey: stakePubkey, isSigner: false, isWritable: true
-    }])
-    .signers([payer.payer])
+    }).remainingAccounts(remainingAccounts)
+    .signers([tempKeypair])
     .rpc();
+
+    console.log("createStakeAccountsAndDelegate tx: ", tx)
+
+    // fetching new stake accounts for tempKeypair
+    console.log("fetching new stake accounts for tempKeypair")
 
     const currentStakeAccounts = await provider
       .connection
@@ -57,14 +99,76 @@ describe("stake-my-sol", () => {
         {
           memcmp: {
             offset: 12,
-            bytes: payer.publicKey.toBase58(),
+            bytes: tempKeypair.publicKey.toBase58(),
+          },
+        },
+      ],
+    });
+
+    assert.equal(currentStakeAccounts.length, numberOfStakeAccounts)
+  })
+
+
+  it("create a Stake Account And delegate", async () => {
+
+    await sleep(20000);
+    const airdropAmount = 1 * LAMPORTS_PER_SOL;
+    console.log("air dropping ${airdropAmount / LAMPORTS_PER_SOL} SOL to tempKeypair...")
+    const airdrop_tx = await provider.connection.requestAirdrop(tempKeypair.publicKey, airdropAmount);
+    await provider.connection.confirmTransaction(airdrop_tx);
+
+    // create random string for seedPrefix
+    const seedPrefix = crypto.randomBytes(4).toString('hex') 
+    console.log("🚀 ~ file: stake-my-sol.ts ~ line 45 ~ it ~ seedPrefix", seedPrefix)
+    // initial index for 
+    const initialIndex = 0;
+    // total amount of lamports to be staked
+    const totalStakeAmount = 0.8 * LAMPORTS_PER_SOL;
+
+    const stakePubkey = await web3.PublicKey.createWithSeed(tempKeypair.publicKey, `${seedPrefix}-${initialIndex}`, stakeProgram.programId) 
+    console.log("stake pubkey: ", stakePubkey.toBase58())
+
+    // create a new stake account and delegate it to voteAccounts[0]
+    console.log(`creating a new stake account and delegate it to ${voteAccounts[0]}...`)
+    const tx = await program.methods.createStakeAccountsAndDelegate(
+      new BN(totalStakeAmount), 
+      0,
+      seedPrefix,
+      )
+      .accounts({
+        staker: tempKeypair.publicKey,
+        stakeProgram: stakeProgram.programId,
+        systemProgram: web3.SystemProgram.programId,
+        rentSysvar: web3.SYSVAR_RENT_PUBKEY,
+        clockSysvar: web3.SYSVAR_CLOCK_PUBKEY,
+        stakeHistorySysvar: web3.SYSVAR_STAKE_HISTORY_PUBKEY,
+        stakeConfigSysvar: web3.STAKE_CONFIG_ID
+    }).remainingAccounts([{
+      pubkey: voteAccounts[0], isSigner: false, isWritable: false
+    },{
+      pubkey: stakePubkey, isSigner: false, isWritable: true
+    }])
+    .signers([tempKeypair])
+    .rpc();
+
+    console.log("createStakeAccountsAndDelegate tx: ", tx)
+
+    // fetching new stake accounts for tempKeypair
+    console.log("fetching new stake accounts for tempKeypair")
+
+    const currentStakeAccounts = await provider
+      .connection
+      .getParsedProgramAccounts(stakeProgram.programId, {
+      filters: [
+        {
+          memcmp: {
+            offset: 12,
+            bytes: tempKeypair.publicKey.toBase58(),
           },
         },
       ],
     });
 
     assert.equal(currentStakeAccounts.length, 1)
-
-    console.log("Your transaction signature", tx);
   })
 });
