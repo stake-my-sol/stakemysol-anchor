@@ -52,6 +52,7 @@ describe("stake-my-sol", () => {
     // deducting a little bit to cover TX fees
     const totalStakeAmount = 0.8 * LAMPORTS_PER_SOL;
     let remainingAccounts: web3.AccountMeta[] = []
+    let bumpsArr: number[] = []
 
     
     // creating #numberOfStakeAccounts stake accounts and delegating
@@ -65,7 +66,7 @@ describe("stake-my-sol", () => {
       // creating #numberOfStakeAccounts stake accounts and delegating
       for (let i=0; i <  numberOfStakeAccounts; i++){
         let seedPostFix = (initialIndex + i).toString();
-        let stakePubkey = await web3.PublicKey.createWithSeed(tempKeypair.publicKey, `${seedPrefix}-${seedPostFix}`, stakeProgram.programId) 
+        let [stakePubkey, bump] = web3.PublicKey.findProgramAddressSync([tempKeypair.publicKey.toBuffer(), Buffer.from(`${seedPrefix}-${seedPostFix}`)], stakeProgram.programId) 
         
         if (web3.PublicKey.isOnCurve(stakePubkey)) {
           remainingAccounts = []
@@ -73,6 +74,7 @@ describe("stake-my-sol", () => {
           break
         }
 
+        bumpsArr[i] = bump
         remainingAccounts.splice(i, 0, {pubkey: voteAccounts[i], isSigner: false, isWritable: false})
         remainingAccounts.splice(i + numberOfStakeAccounts, 0, {pubkey: stakePubkey, isSigner: false, isWritable: true})
         calculatedStakePubkeyNum += 1;
@@ -85,6 +87,7 @@ describe("stake-my-sol", () => {
       new BN(totalStakeAmount), 
       initialIndex,
       seedPrefix,
+      bumpsArr
       )
       .accounts({
         staker: tempKeypair.publicKey,
