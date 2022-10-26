@@ -12,8 +12,8 @@ url = "https://api.apr.dev"
 # cluster = "https://radial-blissful-surf.solana-testnet.quiknode.pro/e3ccd1cfd24786408ed6afffbe3bbf5aa8f74cc0/"
 # cluster = "testnet"
 # devnet
-# cluster = "https://solana-devnet.g.alchemy.com/v2/GYjR1mO4JjwZ1mC6LLuwCVrFWFLY6BWX"
-cluster = "devnet"
+cluster = "https://solana-devnet.g.alchemy.com/v2/GYjR1mO4JjwZ1mC6LLuwCVrFWFLY6BWX"
+# cluster = "devnet"
 wallet = "/home/nick/.config/solana/devnet.json"
 
 [scripts]
