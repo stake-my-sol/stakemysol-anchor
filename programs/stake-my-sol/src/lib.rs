@@ -5,7 +5,7 @@ use anchor_lang::solana_program::{
 };
 use anchor_lang::system_program;
 
-declare_id!("C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd");
+declare_id!("FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun");
 
 #[program]
 pub mod stake_my_sol {
