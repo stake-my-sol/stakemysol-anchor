@@ -3,9 +3,9 @@ This repo is a collection of solana programs related to Stake my SOL project.
 
 # Program Addresses
 ### stake_my_sol
-testnet: "C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd"
+testnet: FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun
 
-devnet: "C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd"
+devnet: FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun
 
 mainnet: Stay Tuned!
 
