@@ -5,7 +5,7 @@ use anchor_lang::solana_program::{
 };
 use anchor_lang::system_program;
 
-declare_id!("C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd");
+declare_id!("FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun");
 
 #[program]
 pub mod stake_my_sol {
@@ -16,6 +16,7 @@ pub mod stake_my_sol {
         total_stake_amount: u64,
         initial_seed_index: u8,
         prefix_seed: String,
+        bumps: String,
     ) -> Result<()> {
         let remaining_accounts = ctx.remaining_accounts;
         let staker = &mut ctx.accounts.staker;
@@ -25,6 +26,7 @@ pub mod stake_my_sol {
         let clock_sysvar = &ctx.accounts.clock_sysvar;
         let stake_history_sysvar = &ctx.accounts.stake_history_sysvar;
         let stake_config_sysvar = &ctx.accounts.stake_config_sysvar;
+        let bumps: Vec<u8> = bumps.split(",").map(|s| s.parse::<u8>().unwrap()).collect();
 
         msg!("validating passed stake program");
         require_keys_eq!(stake_program.key(), Stake::program::id());
@@ -35,7 +37,7 @@ pub mod stake_my_sol {
         msg!(
             "validating passed accounts to be even (i.e in pairs of vote pubkey and stake pubkey)"
         );
-        if (remaining_accounts.len() % 2 != 0) | (remaining_accounts.len() == 0) {
+        if (remaining_accounts.len() % 2 != 0) | remaining_accounts.is_empty() {
             return Err(ErrorCode::InvalidNumberOfAdditionalAccounts.into());
         }
 
@@ -51,7 +53,6 @@ pub mod stake_my_sol {
 
         msg!("check owner of vote accounts to be Vote::program::id()");
         for vote_acc in vote_accounts.iter() {
-            msg!("validating passed vote account");
             require_keys_eq!(*vote_acc.owner, Vote::program::id());
         }
 
@@ -60,8 +61,8 @@ pub mod stake_my_sol {
             .skip(number_of_stake_accouns)
             .collect::<Vec<&AccountInfo>>();
 
+        msg!("validating passed stake accounts");
         for stake_acc in stake_accounts.iter() {
-            msg!("validating passed stake accounts");
             // *: stake accounts should not be initialized
             // *: i.e owner should be system_program::id() not the stake_program::id()
             require_keys_neq!(*stake_acc.owner, Stake::program::id());
@@ -84,17 +85,23 @@ pub mod stake_my_sol {
             msg!("Creating the stake pubkeys");
             let current_seed = &format!("{}-{}", prefix_seed, seed_index);
 
-            let calculated_stake_pubkey =
-                Pubkey::create_with_seed(&staker.key(), current_seed, &stake_program.key())
-                    .unwrap();
+            // let calculated_stake_pubkey =
+            //     Pubkey::create_with_seed(&staker.key(), current_seed, &stake_program.key())
+            //         .unwrap();
 
-            msg!("Check if the respective input stake pubkey is equal to calculated one");
-            require_keys_eq!(repective_input_stake_account.key(), calculated_stake_pubkey);
+            // let (calculated_stake_pubkey, bump) = Pubkey::find_program_address(
+            //     &[staker.key().as_ref(), current_seed.as_bytes()],
+            //     &stake_program.key(),
+            // );
+
+            // msg!("Check if the respective input stake pubkey is equal to calculated one");
+            // require_keys_eq!(repective_input_stake_account.key(), calculated_stake_pubkey);
 
             // Todo: check if the stake account has already been used
 
             msg!("Creating the stake account");
 
+            // *: An alternative implemetation
             // invoke_signed(
             //     &system_instruction::create_account_with_seed(
             //         &staker.key(),
@@ -117,22 +124,20 @@ pub mod stake_my_sol {
             //     ]],
             // )?;
 
-            // *: An alternative implemetation
-            system_program::create_account_with_seed(
+            system_program::create_account(
                 CpiContext::new_with_signer(
                     stake_program.to_account_info(),
-                    system_program::CreateAccountWithSeed {
+                    system_program::CreateAccount {
                         from: staker.to_account_info(),
                         to: repective_input_stake_account.to_account_info(),
-                        base: staker.to_account_info(),
                     },
                     &[&[
                         staker.key().as_ref(),
                         current_seed.as_bytes(),
-                        Stake::program::id().as_ref(),
+                        // Stake::program::id().as_ref(),
+                        &[bumps[i]],
                     ]],
                 ),
-                current_seed,
                 stake_amount_per_account,
                 std::mem::size_of::<Stake::state::StakeState>() as u64,
                 &stake_program.key(),
@@ -174,7 +179,8 @@ pub mod stake_my_sol {
                 &[&[
                     staker.key().as_ref(),
                     current_seed.as_bytes(),
-                    Stake::program::id().as_ref(),
+                    // Stake::program::id().as_ref(),
+                    &[bumps[i]],
                 ]],
             )?;
 

@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-stake_my_sol = "C6Vb7CQCa2Hovhpdu1iaZR3VBcbKt3W9XNHRYYs1NVd"
+stake_my_sol = "FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun"
 
 [registry]
 url = "https://api.apr.dev"
@@ -12,8 +12,8 @@ url = "https://api.apr.dev"
 # cluster = "https://radial-blissful-surf.solana-testnet.quiknode.pro/e3ccd1cfd24786408ed6afffbe3bbf5aa8f74cc0/"
 # cluster = "testnet"
 # devnet
-cluster = "https://solana-devnet.g.alchemy.com/v2/GYjR1mO4JjwZ1mC6LLuwCVrFWFLY6BWX"
-# cluster = "devnet"
+# cluster = "https://solana-devnet.g.alchemy.com/v2/GYjR1mO4JjwZ1mC6LLuwCVrFWFLY6BWX"
+cluster = "devnet"
 wallet = "/home/nick/.config/solana/devnet.json"
 
 [scripts]

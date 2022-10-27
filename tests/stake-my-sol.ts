@@ -29,13 +29,13 @@ describe("stake-my-sol", () => {
   it("fetch some vote accounts and airdrop sol to tempKeypair", async () => {
     const res = await provider.connection.getVoteAccounts(provider.connection.commitment);
     voteAccounts = res.current
-                      .slice(0,11)
+                      .slice(0,10)
                       .map(validator => new web3.PublicKey(validator.votePubkey))
 
     const airdropTx = await provider.connection.requestAirdrop(tempKeypair.publicKey, 1 * LAMPORTS_PER_SOL)
     await provider.connection.confirmTransaction(airdropTx)
     
-    assert.equal(10, voteAccounts.length)
+    assert.equal(voteAccounts.length, 10)
   })
 
   it("create multiple stake accounts and delegate", async () => {
@@ -56,24 +56,31 @@ describe("stake-my-sol", () => {
 
     
     // creating #numberOfStakeAccounts stake accounts and delegating
-    console.log(`creating ${numberOfStakeAccounts} stake accounts and delegating...`)
 
     let calculatedStakePubkeyNum = 0;
     while(calculatedStakePubkeyNum < numberOfStakeAccounts){
 
       initialIndex += 1;
-      
       // creating #numberOfStakeAccounts stake accounts and delegating
       for (let i=0; i <  numberOfStakeAccounts; i++){
         let seedPostFix = (initialIndex + i).toString();
-        let [stakePubkey, bump] = web3.PublicKey.findProgramAddressSync([tempKeypair.publicKey.toBuffer(), Buffer.from(`${seedPrefix}-${seedPostFix}`)], stakeProgram.programId) 
+        let [stakePubkey, bump] = await web3.PublicKey.findProgramAddress([
+          provider.wallet.publicKey.toBuffer(),
+          anchor.utils.bytes.utf8.encode(`${seedPrefix}-${seedPostFix}`),
+        ], stakeProgram.programId)
+        // let stakePubkey = await web3.PublicKey.createWithSeed(
+        //   tempKeypair.publicKey,
+        //   `${seedPrefix}-${seedPostFix}`,
+        //   stakeProgram.programId
+        // )
         
         if (web3.PublicKey.isOnCurve(stakePubkey)) {
+          bumpsArr = []
           remainingAccounts = []
           calculatedStakePubkeyNum = 0
           break
         }
-
+        
         bumpsArr[i] = bump
         remainingAccounts.splice(i, 0, {pubkey: voteAccounts[i], isSigner: false, isWritable: false})
         remainingAccounts.splice(i + numberOfStakeAccounts, 0, {pubkey: stakePubkey, isSigner: false, isWritable: true})
@@ -82,12 +89,12 @@ describe("stake-my-sol", () => {
     }
 
     // create a new stake account and delegate it to voteAccounts[0...numberOfStakeAccounts]
-    console.log(`creating a new stake account and delegate it to voteAccounts[0...numberOfStakeAccounts]...`)
+    console.log(`creating new stake accounts and delegating them to voteAccounts[0...numberOfStakeAccounts]...`)
     const tx = await program.methods.createStakeAccountsAndDelegate(
       new BN(totalStakeAmount), 
       initialIndex,
       seedPrefix,
-      bumpsArr
+      bumpsArr.join(",")
       )
       .accounts({
         staker: tempKeypair.publicKey,
