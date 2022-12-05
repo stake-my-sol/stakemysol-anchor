@@ -1,4 +1,5 @@
 import * as anchor from "@project-serum/anchor";
+import fs from "fs"
 import { Program, BN } from "@project-serum/anchor";
 import { web3 } from "@project-serum/anchor";
 import { StakeMySol } from "../target/types/stake_my_sol";
@@ -25,11 +26,10 @@ describe("stake-my-sol", () => {
   let voteAccounts: web3.PublicKey[] = [];
   let tempKeypair = anchor.web3.Keypair.generate();
 
-
   it("fetch some vote accounts and airdrop sol to tempKeypair", async () => {
     const res = await provider.connection.getVoteAccounts(provider.connection.commitment);
     voteAccounts = res.current
-                      .slice(0,11)
+                      .slice(0,10)
                       .map(validator => new web3.PublicKey(validator.votePubkey))
 
     const airdropTx = await provider.connection.requestAirdrop(tempKeypair.publicKey, 1 * LAMPORTS_PER_SOL)

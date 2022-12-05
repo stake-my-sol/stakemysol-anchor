@@ -8,8 +8,8 @@ stake_my_sol = "FmziXL4yqAoj6taTrpxQm4JGQn4tFiXX7CPhrm2Bieun"
 url = "https://api.apr.dev"
 
 [provider]
-# cluster = "testnet"
 cluster = "devnet"
+# cluster = "devnet"
 wallet = "/home/nick/.config/solana/devnet.json"
 
 [scripts]
